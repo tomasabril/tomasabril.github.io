@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Tomás Abril - site pessoal</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sakura.css" type="text/css">
+</head>
+
+<body>
+    <header>
+        <small>
+            <a href="../index.html">Home</a>
+            <p>Published on 08/01/18 by Tomás Abril</p>
+            <hr>
+        </small>
+    </header>
+
+
+    <img src="https://tomasum.files.wordpress.com/2017/12/openssh.gif" />
+    <h2>Configurando SSH de maneira segura</h2>
+
+    <p>Comprei um raspberry pi 3, para ter acesso a ele configurei um servidor ssh e aqui vou descrever os passos feitos.</p>
+    <p>
+        <a href="https://wiki.archlinux.org/index.php/Secure_Shell">https://wiki.archlinux.org/index.php/Secure_Shell</a>
+    </p>
+    <p>Normalmente o servidor open ssh tem autenticação pela senha de usuário da máquina remota, mas isto é extremamente inseguro!
+        Se o servidor estiver visível para a internet qualquer pessoa pode tentar se logar no seu computador. Vou configurar o ssh para permitir autenticação apenas por chaves ssh.</p>
+    <h2>Ligando o servidor</h2>
+    <h3>no raspberry pi 3</h3>
+    <p>No raspi-config vá em
+        <i>interfacing options</i> e ligue o SSH.</p>
+    <pre class="term">$ sudo raspi-config</pre>
+    <p>
+        <img src="https://tomasum.files.wordpress.com/2017/12/screenshot_2017-12-19_20-01-40-e1513720931201.png" />
+    </p>
+    <p>A partir de agora seu raspberry já está acessível por SSH de computadores na mesma rede.</p>
+
+    <h3>Em um computador comum</h3>
+
+    <p>Instale o pacote <b>openssh</b> e inicie o serviço.</p>
+
+    <pre class="term">$ systemctl enable sshd.socket
+$ systemctl start sshd.socket</pre>
+
+    <p>Se estiver usando uma porta diferente da 22 modificar o unit file.</p>
+    <pre class="term">$ systemctl edit sshd.socket</pre>
+
+    <h2>Configurando cliente</h2>
+    <p>Instale o pacote openssh no seu computador principal, esse é o software cliente que vai se conectar com o raspberry.</p>
+    <p>Teste a conexão.</p>
+    <pre class="term">$ ssh raspiuser@serveraddress</pre>
+
+    <p>O endereço é o endereço ip local do raspberry, é uma boa ideia deixar ele estático.</p>
+    <p>Agora você está logado no seu raspberry remotamente!</p>
+
+
+    <h2>Criando uma ssh-key</h2>
+
+    <p>Daqui a pouco vamos desabilitar o login por senha e permitir apenas por chaves ssh. Se o seu raspberry estiver conectado
+        a internet isto é essencial.</p>
+    <p>Normalmente cada computador tem uma chave ssh, leia mais sobre isso aqui
+        <a href="https://wiki.archlinux.org/index.php/SSH_keys">https://wiki.archlinux.org/index.php/SSH_keys</a>
+    </p>
+    <p>Para criar nosso par de chaves publica e privada executamos o seguinte comando:</p>
+    <pre class="term">$ ssh-keygen -b 4096 -C &#8220;comentário para identificar. seu@email.com&#8221;</pre>
+
+    <p>Isto cria uma chave do tipo rsa (que é o padrão) com 4096 bits e um comentário para facilitar a identificação. Ela fica
+        salva na pasta
+        <b>/home/&lt;username&gt;/.ssh/</b>
+    </p>
+    <p>
+        <img src="https://tomasum.files.wordpress.com/2017/12/screenshot_2017-12-21_01-11-35_cp2.png" />
+    </p>
+    <p>Para poder utilizar a sua chave é preciso saber a senha que você colocou nela, então escolha uma boa senha.</p>
+    <p>Se mais tarde decidir mudar a senha é possível modificá-la sem modificar a chave.</p>
+    <pre class="term">$ ssh-keygen -f ~/.ssh/id_rsa -p</pre>
+    <p>Enviar a sua chave pública para o servidor.</p>
+    <pre class="term">$ ssh-copy-id -p 22 username@remote-server-ip</pre>
+    <p>Agora toda vez que você for se conectar por ssh vai ser utilizado a sua chave e a senha necessária para se conectar é
+        a senha da sua chave.</p>
+    <p>A senha pode ser salva no ssh-agent para que não precise digitá-la toda vez.</p>
+    <pre class="term">
+$ eval $(ssh-agent)
+$ ssh-add ~/.ssh/id_rsa</pre>
+
+    <p>Para que a senha não seja requerida o ssh-agent precisa estar ativo apos todo boot do sistema. O xfce cuida disso automaticamente.
+        Para gnome ver
+        <a href="https://wiki.archlinux.org/index.php/GNOME/Keyring">https://wiki.archlinux.org/index.php/GNOME/Keyring</a>
+    </p>
+    <p>Para facilitar a conexão edite o arquivo
+        <b>~/.ssh/config</b> com o conteúdo:</p>
+    <pre>
+# global options
+User remoteUser
+AddKeysToAgent yes
+
+# host-specific options
+Host aSimpleName
+HostName 192.168.1.10
+Port 1234</pre>
+
+    <p>Com essa configuração salva os dois seguintes comandos tem a mesma função.</p>
+
+    <pre class="term">
+$ ssh -p 1234 remoteUser@192.168.1.10
+$ ssh aSimpleName
+</pre>
+
+    <h2>Configurando o servidor</h2>
+
+    <p>Agora que já temos acesso ao sistema usando apenas a chave ssh podemos desabilitar o login por senha para ficarmos mais
+        seguros.
+    </p>
+    <p>No servidor vamos editar o arquivo
+        <b>/etc/ssh/sshd_config</b>
+    </p>
+    <p>Para uma configuração mais segura as seguintes linhas devem ser modificadas.</p>
+    <pre>
+Port 1234
+PermitRootLogin no
+PubkeyAuthentication yes
+PasswordAuthentication no    </pre>
+    <p>Mudar a porta de conexão também na configuração do cliente no
+        <b>arquivo ~/.ssh/config</b>
+    </p>
+    <p>Reinicie o servidor ssh e pronto, sua conexão sempre utilizará somente ssh keys.</p>
+    <p>Para uma explicação completa de todas as configurações ver</p>
+    <p>
+        <a href="https://www.openssh.com/manual.html">https://www.openssh.com/manual.html</a>
+    </p>
+    <p>Para visualizar as chaves aceitas pelo servidor leia o seguinte arquivo.</p>
+    <pre class="term">$ cat ~/.ssh/authorized_keys</pre>
+    <h2>SSHFS</h2>
+    <p>
+        <a href="https://wiki.archlinux.org/index.php/SSHFS">https://wiki.archlinux.org/index.php/SSHFS</a>
+    </p>
+    <p>O sshfs permite montar um sistema de arquivos remoto no seu computador. Para usá-lo instale o pacote sshfs na maquina
+        cliente.
+    </p>
+    <p>Montando:</p>
+    <pre class="term">$ sshfs user@hostAddr:/remote/path /local/path -C -p 1234</pre>
+    <p>-p indica a porta na qual o servidor está escutando.</p>
+    <p>Para desmontar (umount):</p>
+    <pre class="term">$ fusermount3 -u /local/path</pre>
+
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+</body>
+
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Tomás Abril - site pessoal</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sakura.css" type="text/css">
+</head>
+
+<body>
+    <header>
+        <small>
+            <a href="../index.html">Home</a>
+            <p>Published on 08/01/18 by Tomás Abril</p>
+            <hr>
+        </small>
+    </header>
+
+    <img src="https://tomasum.files.wordpress.com/2017/12/tor-logo-2011-flat.png" />
+
+    <h2>Criando um hidden service na rede onion (TOR) com lighttpd no RaspberryPi 3</h2>
+
+    <h3>Tor: Onion Service Protocol</h3>
+    <p>Com o Tor pessoas podem criar vários tipos de serviços como paginas web ou servidores de aplicações sem precisar revelar
+        a sua localização. Através da rede onion usuários se conectam a esses serviços de forma anônima.</p>
+    <p>Leia mais sobre onion services aqui
+        <a href="https://www.torproject.org/docs/onion-services">https://www.torproject.org/docs/onion-services</a>
+    </p>
+    <p>Vou utilizar um raspberry pi 3 com Raspian Strech.</p>
+    <p>O meu hidden service será uma página web utilizando o servidor lighttpd.
+        <a href="./Site-html-basico-com-lighttp.html">Ver post anterior</a> explicando como ligar o lighttpd.</p>
+    <p>
+        <a href="https://www.torproject.org/docs/tor-onion-service.html.en">https://www.torproject.org/docs/tor-onion-service.html.en</a>
+    </p>
+    <h2>Ligando o firewall</h2>
+    <p>Como vamos estar abertos para a internet é uma boa ideia estar com um firewall habilitado no computador.</p>
+    <pre class="term">$ sudo aptitude install ufw</pre>
+
+    <p>Permitindo que apenas computadores na sua rede local acessem o ssh. Trocar o ip pelo ip da sua rede e a porta pela porta
+        onde o ssh está escutando.</p>
+    <pre class="term">$ sudo ufw allow from 192.168.1.0/24 to any port 2222</pre>
+    <p>Ligar o firewall</p>
+    <pre class="term">$ sudo ufw enable</pre>
+    <p>Visualizando as regras ativas.</p>
+    <pre class="term">$ sudo ufw status verbose</pre>
+    <p>Neste ponto suas regras devem estar parecidas com as da imagem a seguir.</p>
+    <p>
+        <img src="https://tomasum.files.wordpress.com/2017/12/screenshot_2017-12-26_20-00-52.png" />
+    </p>
+    <p>O importante é não permitir conexões externas para não comprometer a segurança do seu computador.</p>
+    <h2>lighttpd</h2>
+    <p>Configure o lighttpd para permitir apenas conexões locais, o tor vai rotear as conexões externas como conexões locais.</p>
+    <p>No arquivo
+        <strong>/etc/lighttpd/lighttpd.conf</strong> adicione as seguintes linhas.</p>
+
+        <pre>$HTTP["remoteip"] !~ "localhost|127.0.0.1|::1" {
+    url.access-deny = ( "" )
+}
+server.dir-listing = "disable"</pre>
+
+    <p>Verifique se a configuração é valida com</p>
+    <pre class="term">$ lighttpd -t -f /etc/lighttpd/lighttpd.conf</pre>
+    <p>Reinicie o servidor.</p>
+    <pre class="term">$ sudo systemctl restart lighttpd.service</pre>
+    <p>Para testar aponte um navegador para a sua página local.</p>
+    <pre class="term">$ w3m http://localhost:8080</pre>
+
+
+    <h2>Instalando Tor</h2>
+
+<pre class="term">$ sudo aptitude install tor tor-arm</pre>
+    <p>
+        <strong>tor-arm</strong> é um programa para monitoramento de tráfego.</p>
+    <p>O arquivo de configuração do tor fica em
+        <strong>/etc/tor/torrc</strong>
+    </p>
+    <p>Adicione as linhas:</p>
+    <pre>
+HiddenServiceDir /var/lib/tor/my_hidden_service/
+HiddenServicePort 80 localhost:8080
+SocksPort 0</pre>
+
+    <p>Na pasta
+        <strong> /var/lib/tor/my_hidden_service/ </strong> ficarão salvas as chaves criptográficas do seu serviço. Escolha um local
+        com permissão de leitura e escrita pelo usuário que vai executar o tor.</p>
+    <p>A linha HiddenServicePort indica que conexões com o seu onion service pela porta 80 serão redirecionadas para localhost:8080.
+        Substitua localhost:8080 pelo endereço e porta em que o lighttpd está servindo sua página web.</p>
+    <p>SocksPort 0 indica que você não vai se conectar com a rede onion como cliente, para isso utilize o tor browser bundle.</p>
+    <p>
+        <a href="https://www.torproject.org/download/download-easy.html.en">https://www.torproject.org/download/download-easy.html.en</a>
+    </p>
+    <p>Habilite e reinicie o tor.</p>
+    <pre class="term">
+$ sudo systemctl enable tor.service
+$ sudo systemctl restart tor.service</pre>
+    <p>O tor vai criar suas chaves criptográficas no HiddenServiceDir especificado.</p>
+    <p>Se a pasta com os arquivos não tiver sido criada procure no log por possíveis erros.</p>
+    <p>
+        <a href="https://www.torproject.org/docs/faq.html.en#Logs">https://www.torproject.org/docs/faq.html.en#Logs</a>
+    </p>
+    <p>Para encontrar o endereço .onion abra o HiddenServiceDir/hostname</p>
+    <p>No meu caso.</p>
+    <pre class="term">$ sudo cat /var/lib/tor/my_hidden_service/hostname</pre>
+    <p>
+        <img src="https://tomasum.files.wordpress.com/2017/12/screenshot_2017-12-26_23-07-38.png" />
+    </p>
+    <p>No link
+        <a href="http://o5ph2op7bbwpdbgq.onion">o5ph2op7bbwpdbgq.onion</a> o meu hidden service pode ser acessado.</p>
+    <p>
+        <img src="https://tomasum.files.wordpress.com/2017/12/screenshot_2017-12-26_23-37-36.png" />
+    </p>
+    <p><b>ATENÇÃO:</b> Não rodar no mesmo computador um tor relay e um onion service porque seria possível desanonimizar o seu servidor
+        e possivelmente seus usuários.</p>
+
+
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+</body>
+
+</html>

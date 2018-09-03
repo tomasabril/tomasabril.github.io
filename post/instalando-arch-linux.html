@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Tomás Abril - site pessoal</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sakura.css" type="text/css">
+</head>
+
+<body>
+    <header>
+        <small>
+            <a href="../index.html">Home</a>
+            <p>Published on 08/01/18 by Tomás Abril</p>
+            <hr>
+        </small>
+    </header>
+
+    <img src="https://tomasum.files.wordpress.com/2017/12/archlinux-512-e1513727142965.png" />
+
+    <h2>instalando arch linux</h2>
+    <p>Decidi reinstalar ArchLinux no meu computador e vou escrever os passos aqui.</p>
+    <p>Para a documentação atualizada e mais detalhada consulte a archwiki.
+        <a href="https://wiki.archlinux.org">https://wiki.archlinux.org</a>
+    </p>
+    <h2>Preparando o pendrive de boot</h2>
+    <p>Download do arquivo .iso do site oficial
+        <a href="https://www.archlinux.org/download/">https://www.archlinux.org/download/</a>
+    </p>
+    <p>Para gravar o .iso no pendrive utilizei um programa chamado etcher
+        <a href="https://etcher.io">https://etcher.io</a> mas pode ser utilizado o comando dd ou outra ferramenta.</p>
+    <p>Faça o boot pelo seu pendrive e você encontrará uma tela como a da imagem.</p>
+    <p>
+        <img src="https://tomasum.files.wordpress.com/2017/12/2017-12-15-21-02-24-e1513547671862.jpg" />
+    </p>
+    <h2>Configurando o teclado</h2>
+    <p>Listar os layouts de teclado disponíveis.</p>
+    <pre class="term">$ ls /usr/share/kbd/keymaps/**/*.map.gz</pre>
+    <p>Ativar teclado brasileiro.</p>
+    <pre class="term">$ loadkeys br-abnt2    </pre>
+    <h2>Para ter certeza que está no modo EFI</h2>
+    <pre class="term">$ ls /sys/firmware/efi/efivars   </pre>
+    <p>Se tiver coisas ai está tudo certo.</p>
+    <h2>Conectar a internet</h2>
+    <p>Por padrão o archlinux-live tenta se conectar a uma rede com dhcp. Normalmente vai estar tudo certo já, mas recomendo
+        se conectar por cabo.</p>
+    <pre class="term">$ ping archlinux.org  </pre>
+    <h2>Configurar hora</h2>
+    <p>Para ver como está a configuração.</p>
+    <pre class="term">$ timedatectl status  </pre>
+    <p>Para atualizar horário pela internet.</p>
+    <pre class="term">$ timedatectl set-ntp true    </pre>
+    <h2>Particionar os discos</h2>
+    <p>Agora vem a hora mais difícil, se errar agora pode perder os dados de partições que você não queria mexer.</p>
+    <p>Listar partições existentes.</p>
+    <pre class="term">$ fdisk -l    </pre>
+    <p>Vou usar o programa chamado cfdisk para fazer as minhas partições, ele tem uma interface pseudo-gráfica no terminal.
+        Os programas fdisk e parted são também comumente usados.</p>
+    <p>A interface do cfdisk é relativamente fácil de usar.</p>
+    <p>
+        <img src="https://tomasum.files.wordpress.com/2017/12/screenshot_2017-12-17_09-08-53-e1513547608749.png" />
+    </p>
+    <p>Eu fiquei com:</p>
+    <pre>
+/dev/sda2 como minha partição efi
+/dev/sda5 para usar como / (root)
+/dev/sdb3 para usar como /home </pre>
+    <p>No meu computador sda é um ssd de 120Gb e sdb é um HD de 1Tb.</p>
+    <h2>Formatar as partições</h2>
+    <p>Agora estamos com as partições feitas, mas não tem nada dentro delas ainda.</p>
+    <p>Formatar com o tipo de file system desejado, no meu caso ext4.</p>
+    <pre class="term">
+$ mkfs.ext4 /dev/sda5
+$ mkfs.ext4 /dev/sdb3 </pre>
+    <h2>Montar as partições</h2>
+    <p>Montando o root.</p>
+    <pre class="term">$ mount /dev/sda5 /mnt    </pre>
+    <p>Montando o boot.</p>
+    <pre class="term">
+$ mkdir /mnt/boot
+$ mount /dev/sda2 /mnt/boot    </pre>
+    <p>Montando o home.</p>
+    <pre class="term">
+$ mkdir /mnt/home
+$ mount /dev/sdb3 /mnt/home    </pre>
+    <h2>Instalando o sistema base</h2>
+    <pre class="term">$ pacstrap /mnt base networkmanager    </pre>
+    <p>São aproximadamente 200Mb de download com tudo o que é necessário para um sistema funcional básico em terminal.</p>
+    <h2>Salvando suas partições no novo sistema</h2>
+    <pre class="term">$ genfstab -U /mnt &gt;&gt; /mnt/etc/fstab    </pre>
+    <p>Este comando salva suas partições montadas para que o novo sistema encontre e monte automaticamente todo o sistema de
+        arquivos sempre que ligar o computador.</p>
+    <p>Verifique se ficou correto.</p>
+    <pre class="term">$ cat /mnt/etc/fstab    </pre>
+    <h2>Entrando no novo sistema</h2>
+    <pre class="term">$ arch-chroot /mnt    </pre>
+    <p>Agora estamos logados no sistema operacional que acabou de ser instalado.</p>
+    <h2>Configurando a hora</h2>
+    <p>Para o horário de Curitiba.</p>
+    <pre class="term">
+$ ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
+$ hwclock --systohc </pre>
+    <h2>Locale</h2>
+    <p>Descomente os locales que quiser usar.</p>
+    <pre class="term">$ nano /etc/locale.gen    </pre>
+    <p>Eu vou utilizar o en_US.UTF-8 UTF-8 e o pt_BR.UTF-8 UTF-8.</p>
+    <p>Para gerar os locales.</p>
+    <pre class="term">$ locale-gen    </pre>
+    <p>Para selecionar um locale no próximo boot escreva no arquivo /etc/locale.conf , eu vou usar o locale brasileiro.</p>
+    <pre class="term">$ LANG=pt_BR.UTF-8    </pre>
+    <p>Edite o arquivo
+        <b>/etc/vconsole.conf</b> para configurar o teclado.</p>
+    <pre>KEYMAP=br-abnt2    </pre>
+    <h2>Hostname</h2>
+    <p>Arquivo
+        <b>/etc/hostname</b> com:</p>
+    <pre>myhostname   </pre>
+    <p>Arquivo
+        <b>/etc/hosts</b> com:</p>
+    <pre>
+127.0.0.1 localhost.localdomain localhost
+::1 localhost.localdomain localhost
+127.0.1.1 myhostname.localdomain myhostname    </pre>
+    <h2>Internet</h2>
+    <p>Instale o networkmanager para ter acesso a internet quando fizer o boot normal.</p>
+    <pre class="term">$ pacman -S networkmanager    </pre>
+    <h2>Senha de root</h2>
+    <pre class="term">$ passwd    </pre>
+    <h2>Boot loader</h2>
+    <p>Para que seu novo sistema ligue é preciso de um bootloader, o mais comum e mais fácil é o GRUB.
+        <a href="https://wiki.archlinux.org/index.php/GRUB">https://wiki.archlinux.org/index.php/GRUB</a>
+    </p>
+    <p>Eu vou utilizar o rEFInd por ser mais simples.
+        <a href="https://wiki.archlinux.org/index.php/REFInd">https://wiki.archlinux.org/index.php/REFInd</a>
+    </p>
+    <p>Instalar o pacote.</p>
+    <pre class="term">$ pacman -S refind-efi    </pre>
+    <p>Gravar o bootmanager na partição EFI, esse é um script automático que procura pela sua partição EFI e coloca os arquivos
+        necessários. Na maioria das vezes isto é o suficiente, casos especiais ver archwiki.</p>
+    <pre class="term">$ refind-install </pre>
+    <p>IMPORTANTE! o refint-install vai colocar as opções de boot do kernel de acordo com o boot pelo pendrive, então precisamos
+        modificar o arquivo /boot/refind-linux.conf</p>
+    <p>O que você vai fazer é deletar o arquivo /boot/refind-linux.conf , copiar /usr/share/refind/refind_linux.conf-sample
+        para /boot/refind-linux.conf e editar este arquivo.</p>
+    <pre class="term">
+$ rm /boot/refind-linux.conf
+$ cp /usr/share/refind/refind_linux.conf-sample /boot/refind-linux.conf</pre>
+    <p>A única linha não comentada deve ficar assim:</p>
+    <pre>&#8220;Boot using default options&#8221; &#8220;root=/dev/sda5 rootfstype=ext4 rw add_efi_memmap&#8221;    </pre>
+    <p>Onde /dev/sda5 é a partição como o seu root (/).</p>
+    <p>Se você usa um processador intel é uma boa ideia habilitar o microcode updates, para processadores amd isto já está incluso
+        no sistema base do arch.</p>
+    <pre class="term">$ pacman -S intel-ucode    </pre>
+    <h2>Saindo do chroot</h2>
+    <pre class="term">$ exit    </pre>
+    <p>Desmontando todas as partições.</p>
+    <pre class="term">
+$ umount -R /mnt
+$ reboot    </pre>
+    <p>Lembre de tirar o pendrive do computador.</p>
+    <p>Agora estamos no seu novo sistema operacional !!</p>
+    <h2>Mas ainda não acabou</h2>
+    <p>Refazer a configuração do refind automaticamente com o comando.</p>
+    <pre class="term">$ mkrlconf --force    </pre>
+    <p>
+        <a href="https://wiki.archlinux.org/index.php/Microcode">https://wiki.archlinux.org/index.php/Microcode</a>
+    </p>
+    <p>E habilitar o ucode da intel. Para isso editamos a primeira linha do
+        <b>/boot/refind_linux.conf</b> para que fique:</p>
+    <pre>&#8220;Boot with standard options&#8221; &#8220;root=/dev/sda5 rootfstype=ext4 rw add_efi_memmap initrd=intel-ucode.img initrd=initramfs-linux.img&#8221;    </pre>
+    <p>Agora sim está tudo ok, mas tem algumas coisas que é recomendável fazer ainda.</p>
+    <h2>Recomendações Gerais</h2>
+    <h2>Criando um usuário.</h2>
+    <pre class="term">
+$ useradd -m -G wheel username
+$ passwd username    </pre>
+    <h2>Configurando sudo.</h2>
+    <p>Se não estiver conectado a internet o comando abaixo liga o networkmanager que configura automaticamente redes cabeadas.</p>
+    <pre class="term">
+$ systemctl start NetworkManager.service
+$ systemctl enable NetworkManager.service    </pre>
+    <pre class="term">
+$ pacman -S sudo
+$ EDITOR=nano visudo   </pre>
+    <p>Após comando visudo descomente a linha</p>
+    <pre>%wheel ALL=(ALL) ALL </pre>
+    <p>para que o nosso usuário possa utilizar o comando sudo.</p>
+    <h2>Configurando os mirrors</h2>
+    <p>Vamos utilizar o reflector para gerar uma lista de bons mirrors.</p>
+    <p>
+        <a href="https://wiki.archlinux.org/index.php/Reflector">https://wiki.archlinux.org/index.php/Reflector</a>
+    </p>
+    <pre class="term">
+$ pacman -S reflector rsync
+$ reflector --latest 50 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist 
+$ pacman -Syyu </pre>
+    <h2>Driver nvidia</h2>
+    <p>
+        <a href="https://wiki.archlinux.org/index.php/NVIDIA">https://wiki.archlinux.org/index.php/NVIDIA</a>
+    </p>
+    <pre class="term">$ pacman -S nvidia </pre>
+    <p>Outras coisas da nvidia.</p>
+    <pre class="term">$ pacman -S mesa-vdpau libva-mesa-driver nvidia-settings xorg-server-devel opencl-nvidia nvidia-utils </pre>
+    <h3>Placas de video intel</h3>
+    <p>Ver
+        <a href="https://wiki.archlinux.org/index.php/Intel_graphics">https://wiki.archlinux.org/index.php/Intel_graphics</a>
+    </p>
+    <h3>Placas de video amd</h3>
+    <p>Ver
+        <a href="https://wiki.archlinux.org/index.php/AMDGPU">https://wiki.archlinux.org/index.php/AMDGPU</a>
+    </p>
+    <h2>Desktop enviroment</h2>
+    <p>
+        <a href="https://wiki.archlinux.org/index.php/Desktop_environment">https://wiki.archlinux.org/index.php/Desktop_environment</a>
+    </p>
+    <p>Eu vou instalar o xfce, mas fique livre para instalar qualquer outro como gnome ou kde.</p>
+    <pre class="term">$ pacman -S xfce4 xfce4-goodies </pre>
+    <p>
+        <a href="https://wiki.archlinux.org/index.php/Display_manager">https://wiki.archlinux.org/index.php/Display_manager</a>
+    </p>
+    <p>Para inicializar nosso desktop precisamos de um display manager. Eu vou usar o SDDM, mas pode usar qualquer outro como
+        o GDM ou LightDM.</p>
+    <pre class="term">
+$ pacman -S sddm
+$ systemctl enable sddm.service </pre>
+    <p>Depois de um reboot tudo deve estar funcionando com interface gráfica.</p>
+    <p>Alguns pacotes úteis para completar o xfce.</p>
+    <pre class="term">$ pacman -S file-roller gvfs gconf zenity network-manager-applet catfish mlocate </pre>
+    <h2>Firewall</h2>
+    <pre class="term">
+$ pacman -S gufw
+$ systemctl enable ufw.service </pre>
+    <p>Abrir o programa gráfico gufw e ligar o firewall.</p>
+    <h2>Swap</h2>
+    <p>
+        <a href="https://wiki.archlinux.org/index.php/Swap">https://wiki.archlinux.org/index.php/Swap</a>
+    </p>
+    <p>Eu uso um swap em arquivo (swap file), vou criar um arquivo na minha pasta /home porque é o meu HD de 1Tb.</p>
+    <pre class="term">
+$ fallocate -l 16G /home/swapfile
+$ chmod 600 /home/swapfile
+$ mkswap /home/swapfile
+$ swapon /home/swapfile </pre>
+    <p>no arquivo <b>/etc/fstab</b> escrever</p>
+    <pre class="term">$ /home/swapfile none swap defaults 0 0 </pre>
+    <h2>Configurações para SSD</h2>
+    <p>
+        <a href="https://wiki.archlinux.org/index.php/Solid_State_Drives">https://wiki.archlinux.org/index.php/Solid_State_Drives</a>
+    </p>
+    <p>É uma boa ideia executar um TRIM periodicamente
+        <a href="https://en.wikipedia.org/wiki/Trim_(computing)">https://en.wikipedia.org/wiki/Trim_(computing)</a>
+    </p>
+    <p>Montar as partições usando a opção discard não é mais recomendado, tenha certeza que no seu /etc/fstab nada está montado
+        com a opção discard.</p>
+    <p>Para verificar se o seu ssd tem suporte a TRIM execute o seguinte comando:</p>
+    <pre class="term">$ lsblk --discard </pre>
+    <p>Se os valores de DISK-GRAN e DISK-MAX forem maiores que zero seu ssd tem suporte.</p>
+    <p>Este comando habilita a execução automática de um trim uma vez por semana.</p>
+    <pre class="term">$ systemctl enable fstrim.timer </pre>
+    <h2>Som e codecs</h2>
+    <pre class="term">$ pacman -S pavucontrol pulseaudio vlc qt4 libdvdcss twolame gst-plugins-bad gst-plugins-base gst-plugins-good gst-plugins-ugly gst-libav </pre>
+    <h2>Fontes</h2>
+    <pre class="term">$ pacman -S ttf-fira-mono ttf-freefont ttf-liberation ttf-roboto adobe-source-code-pro-fonts ttf-droid ttf-dejavu ttf-bitstream-vera ttf-linux-libertine font-mathematica noto-fonts-cjk noto-fonts noto-fonts-emoji noto-fonts-extra </pre>
+
+    <p>Isso é um download de mais de 200Mb só de fontes! Não precisa de tudo isso mas é bom instalar pelo menos a ttf-dejavu
+        e a ttf-liberation.</p>
+    <h2>Temas GTK</h2>
+    <p>Para deixar o xfce mais bonito pode ser instalado um desses temas:</p>
+    <pre>
+adapta-gtk-theme
+arc-gtk-theme
+mate-themes
+numix-gtk-theme </pre>
+    <h2>Ícones</h2>
+    <p>Existem muitos, procure um que você goste aqui</p>
+    <p>
+        <a href="https://www.archlinux.org/packages/?sort=&amp;q=icon-theme">https://www.archlinux.org/packages/?sort=&amp;q=icon-theme</a>
+    </p>
+    <p>ou aqui</p>
+    <p>
+        <a href="https://aur.archlinux.org/packages.php?K=icon-theme">https://aur.archlinux.org/packages.php?K=icon-theme</a>
+    </p>
+    <h2>Browser</h2>
+    <pre class="term">$ pacman -S firefox midori w3m </pre>
+    <h2>Outros programas úteis</h2>
+    <p>
+        <a href="https://wiki.archlinux.org/index.php/List_of_applications">https://wiki.archlinux.org/index.php/List_of_applications</a>
+    </p>
+    <p>
+        <em>gnome-disk-utility,</em> particionador e visualizador de discos</p>
+    <p>
+        <em>ntfs-3g</em>, permite montar partições do windows</p>
+    <p>
+        <em>flatpak</em>, ver
+        <a href="https://flathub.org/">https://flathub.org/</a>
+    </p>
+    <p>
+        <em>calibre</em>, para organizar ebooks</p>
+    <p>libreoffice ver
+        <a href="https://wiki.archlinux.org/index.php/LibreOffice">https://wiki.archlinux.org/index.php/LibreOffice</a>
+    </p>
+    <p>
+        <em>transmission-gtk,</em> torrents</p>
+    <p>
+        <em>p7zip lrzip unace unrar unzip zip</em>, compressão de vários formatos</p>
+    <p>
+        <em>evince</em>, ler pdfs</p>
+    <p>
+        <em>simple-scan</em>, para usar um scanner</p>
+    <p>
+        <em>baobab</em>, disk usage analyser</p>
+    <p>
+        <em>pinta</em>, cópia do paint</p>
+    <p>
+        <img src="https://tomasum.files.wordpress.com/2017/12/screenshot_2018-01-01_14-24-32.png" />
+    </p>
+
+
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+</body>
+
+</html>

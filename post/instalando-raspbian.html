@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Tomás Abril - site pessoal</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sakura.css" type="text/css">
+</head>
+
+<body>
+    <header>
+        <small>
+            <a href="../index.html">Home</a>
+            <p>Published on 08/01/18 by Tomás Abril</p>
+            <hr>
+        </small>
+    </header>
+
+    <img src="https://tomasum.files.wordpress.com/2017/12/raspbian.png" />
+
+    <h2>instalando raspbian</h2>
+
+    <p>Comprei um Raspberry Pi 3.</p>
+    <p>Aqui vou documentar o processo de instalação.</p>
+
+    <img src="https://tomasum.files.wordpress.com/2017/12/img_20171218_231713.jpg" />
+
+    <img src="https://tomasum.files.wordpress.com/2017/12/img_20171218_231330.jpg" />
+
+
+    <h2>Materiais:</h2>
+    <ul>
+        <li>Fonte micro USB 2,5A</li>
+        <li>Cartão de memória micro Sd Sdhc 32gb Classe 10</li>
+        <li>Raspberry Pi 3 B</li>
+        <li>2 Dissipadores</li>
+        <li>Case oficial branca/vermelha</li>
+    </ul>
+    <p>Para o sistema operacional utilizei o Raspbian Stretch Lite baixado pelo torrent do site oficial.</p>
+    <p>
+        <a href="https://www.raspberrypi.org/downloads/raspbian/">https://www.raspberrypi.org/downloads/raspbian/</a>
+    </p>
+    <p>Essa é a versão sem interface gráfica. Como a principio vou usar esse raspberry como um servidor e me conectar a ele
+        com ssh não preciso de nada gráfico.</p>
+    <p>Esse download é de apenas 365Mb.</p>
+    <p>Para gravar o .iso em no cartão sd utilizei o Etcher como recomendado no site oficial.</p>
+    <p>
+        <a href="https://etcher.io/">https://etcher.io/</a>
+    </p>
+    <p>Com um monitor hdmi, um teclado usb e o cartão sd conectados quando ligar o raspberry nos encontramos com uma tela como
+        esta.
+    </p>
+    <p>
+        <img src="https://tomasum.files.wordpress.com/2017/12/2017-12-19-183058.jpg" />
+    </p>
+    <h2>Usuários</h2>
+    <p>Por padrão ele vem com um usuário com login</p>
+    <pre>pi</pre>
+    <p>e senha</p>
+
+    <pre>raspberry</pre>
+
+    <p>A primeira coisa que vamos fazer é criar um outro usuário e apagar o usuário padrão. Não quero que ninguém consiga acesso
+        ao meu pi, principalmente porque ele vai estar aberto para a internet. (Vou fazer uma outra postagem sobre ssh usando
+        chaves em vez de senha)</p>
+    <pre class="term">
+$ sudo useradd -m -G sudo -s /bin/bash yourusername
+$ sudo passwd yourusername
+$ exit </pre>
+    <p>Faça o login com o novo usuário e teste se está tudo corrento incluindo usar comandos com sudo. Se estiver tudo ok delete
+        o usuário padrão.</p>
+    <pre class="term">$ sudo deluser -remove-home pi</pre>
+
+    <h2>&gt; Configurações básicas</h2>
+    <p>O raspbian vem com um programa chamado
+        <em>raspi-config </em>para auxiliar em algumas configurações básicas.</p>
+    <pre class="term">$ sudo raspi-config</pre>
+    <p>
+        <img src="https://tomasum.files.wordpress.com/2017/12/screenshot_2017-12-19_19-51-06-e1513721387437.png" />
+    </p>
+    <h2>Locale</h2>
+    <p>Primeiro vamos selecionar o locale (Localisation Options), a quarta opção da lista. É bom no mínimo ter o</p>
+    <pre class="term">$ en_US.UTF-8 UTF-8</pre>
+    <p>e se quiser o sistema em português o</p>
+    <pre class="term">$ pt_BR.UTF-8 UTF-8</pre>
+    <p>Para selecionar um item pressione &#8220;espaço&#8221;, &#8220;Tab&#8221; para select e back.</p>
+    <h2>Advanced Options</h2>
+    <p>No item 7 (Advanced Options) vamos expandir o filesystem para ocupar o cartão sd completo.</p>
+    <p>
+        <img src="https://tomasum.files.wordpress.com/2017/12/screenshot_2017-12-19_20-06-14-e1513721363889.png" />
+    </p>
+    <p>Na opção memory split escolher apenas 16 mb para a gpu já que o pi não tem interface gráfica instalada.</p>
+    <p>
+        <img src="https://tomasum.files.wordpress.com/2017/12/screenshot_2017-12-19_20-05-45-e1513721532355.png" />
+    </p>
+    <p>Nesse mesmo menu de advanced options é possível mudar a resolução e outras opções gráficas se desejar.</p>
+    <h2>Internet</h2>
+    <p>Em Network Options (item 2) estão as configurações de internet.</p>
+    <p>
+        <img src="https://tomasum.files.wordpress.com/2017/12/screenshot_2017-12-19_20-14-14-e1513721741597.png" />
+    </p>
+    <p>Selecione seu hostname no primeiro item.</p>
+    <p>Configure sua wifi se estiver usando. Essa configuração utiliza o wpa_supplicant.</p>
+    <p>
+        <a href="https://wiki.archlinux.org/index.php/WPA_supplicant">https://wiki.archlinux.org/index.php/WPA_supplicant</a>
+    </p>
+    <p>O wpa_supplicant faz apenas a autenticação, a configuração fica salva no arquivo <b>/etc/wpa_supplicant/wpa_supplicant.conf</b></p>
+    <p>Na terceira opção habilite predictable interface names.</p>
+    <h2>Ip estático</h2>
+    <p>O raspbian vem configurado com dhcpcd para fazer a conexão com a internet.</p>
+    <p>
+        <a href="https://wiki.archlinux.org/index.php/Dhcpcd">https://wiki.archlinux.org/index.php/Dhcpcd</a>
+    </p>
+    <p>
+        <em>Primeiro!</em> No seu roteador de internet configure para que ele não distribua todos os ips por dhcp, Deixe alguns
+        de fora da dhcp pool para usar com ips estáticos.</p>
+    <p>Veja o nome da interface que está sendo usada com o comando abaixo, normalmente a wifi fica na wlan0.</p>
+    <pre class="term">$ ip addr</pre>
+    <p>No fim do arquivo <b>/etc/dhcpcd.conf</b> adicione as seguintes linhas.</p>
+
+    <pre>## minha config ##
+#static IP configuration:
+interface wlan0
+static ip_address=192.168.1.250/24
+static ip6_address=2001:1234::1234:1234/64
+static routers=192.168.1.1 </pre>
+
+    <p>Substituindo pelos ips da sua rede.</p>
+    <p>Reinicie seu pi.</p>
+    <pre class="term">$ sudo reboot</pre>
+    <p>Quando logar novamente verifique se a configuração está correta e teste sua conexão com a internet.</p>
+    <pre class="term">
+$ ip addr
+$ ping gnu.org</pre>
+
+    <h3>Pronto! seu Raspberry Pi está configurado.</h3>
+    <p>
+        <img src="https://tomasum.files.wordpress.com/2017/12/raspberry-e1513727029104.jpg" />
+    </p>
+
+
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+</body>
+
+</html>

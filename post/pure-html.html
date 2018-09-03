@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Tomás Abril - site pessoal</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sakura.css" type="text/css">
+</head>
+
+<body>
+    <header>
+        <small>
+            <a href="../index.html">Home</a>
+            <p>Published on 31/12/17 by Tomás Abril</p>
+            <hr>
+        </small>
+    </header>
+
+    <h3>Pure html</h3>
+    <p>
+        <b>Writing a website in html only instead of a static site generator</b>
+    </p>
+
+    <p>I decided to create my own website on the onion network, but since I was hosting everything myself on a raspberryPi it
+        had to be easy, simple, fast, safe and not suck. </p>
+    <p>The answer was a static site with html and very basic css. I didn't want to manage a hosted wordpress or anything similar
+        since I don't care at all to social integrations, visitor statistics, comments (someday maybe?). Fist I started looking
+        at the most popular static site generators like jekyll, but managing environments and dependencies is a pain. So
+        no ruby or javascript with their own package management solutions, I have
+        <a href="https://wiki.archlinux.org/index.php/Pacman">pacman</a> for that already.</p>
+    <p>I found hugo, it's written in Go and ships a binary that i can simply run. It seemed simple enough so I gave it a try.
+        After tweaking the theme a bunch I ended up with something that I liked, but it looked almost the same as a website
+        with only
+        <a href="https://github.com/oxalorg/sakura">sakura</a> for css and a super simple html. </p>
+    <p>Comparing to doing everything myself, Hugo allows me to write in markdown which is much nicer that pure html and it generates
+        the website based on the theme I selected. The downside is that It generates some other files that I don't really
+        know what they are for.</p>
+    <p>So I went ahead with my pure html solution that you are looking at right now. To recreate some niceties that hugo offers
+        I wrote a short python script. It can be found
+        <a href="../new_post.py">here.</a>
+    </p>
+    <p>With this python script I can use the command</p>
+    <pre class="term">$ new_post post-name</pre>
+    <p>and it creates a new html based on a template that i created and adds a link to the new page in the index.html. It also
+        adds the date of creation automatically so I don't loose myself in a bunch of files.
+    </p>
+    <p>With the command
+        <pre class="term">$ new_post go</pre>
+        the script copies the whole website to my raspberrypi through ssh, at least that's what it's going to to once I implement it, but by the time you are reading this it's probably done.
+    </p>
+
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+</body>
+
+</html>

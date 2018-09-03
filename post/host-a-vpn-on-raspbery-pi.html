@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Tomás Abril - site pessoal</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sakura.css" type="text/css">
+</head>
+
+<body>
+    <header>
+        <small>
+            <a href="../index.html">Home</a>
+            <p>Published on 19/03/18 by Tomás Abril</p>
+            <hr>
+        </small>
+    </header>
+
+    <h2>Host a VPN on Raspbery Pi</h2>
+
+    <p>A Virtual Private Network is a very useful tool to secure internet traffic when using a public or untrusted wi-fi. Remember
+        that the administrator of the network you are connected can read all of your information sent through http and possibly
+        even https if you accept any security warning.</p>
+
+    <h5>Software and hardware used:</h5>
+    <ul>
+        <li>Raspbery Pi 3 B</li>
+        <li>
+            <a href="https://www.raspberrypi.org/downloads/raspbian/">Raspbian Stretch</a>
+        </li>
+        <li>
+            <a href="http://www.pivpn.io/">PiVPN</a>
+        </li>
+    </ul>
+
+    <p>It turns out that configuring a vpn is not that simple if you do it by hand. The
+        <a href="https://www.wireguard.com/">Wireguard</a> vpn seems to be a good solution thats not too hard to configure, but it's not yet in the current Debian
+        stable. So I decided to go for the traditional OpenVPN, the problem is that if you read the
+        <a href="https://wiki.archlinux.org/index.php/OpenVPN">wiki page for it</a> you will see that it's a long process to get it working. Thankfully someone created a script
+        that does everything that's needed, the downside is that it works only for Raspbian, Debian and a few versions of
+        Ubuntu. But a Raspberry Pi is the perfect low power, quiet, not too expensive solution to keep running 24/7.</p>
+
+    <h5>Preparation</h5>
+    <p>The Raspberry has to be with:
+        <ul>
+            <li>Raspbian installed,</li>
+            <li>ssh configured,</li>
+            <li>a static ip address,</li>
+            <li>UFW firewall configured.</li>
+        </ul>
+        This are some pages that may help you with these steps:
+        <a href="./post/instalando-raspbian.html">Instalando Raspbian</a>,
+        <a href="./post/Configurando-SSH.html">Configurando SSH de maneira segura</a>.
+
+    </p>
+    <p>
+        For the VPN to work we will open it to the internet, so it is very important that everything is always kept up to date. Before
+        doing anything update the system:
+        <pre class="term">
+$ sudo apt update
+$ sudo apt full-upgrade
+$ sudo systemctl reboot</pre> Now enable
+        <a href='https://wiki.debian.org/UnattendedUpgrades'>UnattendedUpgrades</a>, this is a Debian package that automatically upgrades essential security upgrades. Even with
+        this enabled periodically update your system to make sure you are secured, a compromised vpn server can be very dangerous
+        as the attacker has access to your complete internal network.
+        <pre class="term">
+$ apt-get install unattended-upgrades apt-listchanges
+</pre> In the file
+        <pre>/etc/apt/apt.conf.d/20auto-upgrades</pre> make sure the following lines are as follows:
+        <pre>
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+</pre> Install the
+        <a href='https://wiki.debian.org/OpenVPN'>openvpn package</a>.
+        <pre class="term">
+$ sudo apt-get install openvpn
+</pre>
+    </p>
+
+    <p>New we are ready to get started. :)</p>
+
+    <h5>Installing PiVPN</h5>
+    <p>The installation should be very simple and guide you step by step with a terminal user interface.</p>
+
+    <p>To get started run the command bellow:
+        <pre class="term">
+$ curl -L https://install.pivpn.io | bash</pre>
+    </p>
+    <p>
+        After it finished downloading the program will configure your ip
+    </p>
+
+    <img src="https://tomasum.files.wordpress.com/2018/03/screenshot_2018-03-19_17-42-51.png">
+
+    <p>Choose the user to run the server</p>
+
+    <img src="https://tomasum.files.wordpress.com/2018/03/screenshot_2018-03-19_17-44-24.png">
+    <img src="https://tomasum.files.wordpress.com/2018/03/screenshot_2018-03-19_17-44-43.png">
+
+    <p>I you haven't set up unattended upgrades before it will ask you to do so now. If you already have you can skip this step.</p>
+
+    <img src="https://tomasum.files.wordpress.com/2018/03/screenshot_2018-03-19_17-45-27.png">
+
+    <p>Choose the protocol for your VPN, UDP is the default and works faster and better. Only use TCP if you are sure UDP will
+        be blocked.</p>
+
+    <img src="https://tomasum.files.wordpress.com/2018/03/screenshot_2018-03-19_17-46-33.png">
+
+    <p>Choose a port to run your server, keeping the default is fine but if you want to better hide your server the port can
+        be changed.
+        <a href="https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Registered_ports">List of TCP and UDP port numbers.</a>
+    </p>
+
+    <p>Choose the encryption key size. 1024 is too small, do not choose this option. 4096 is slower and uses more cpu, a 2048
+        bit key is enough.</p>
+
+    <img src="https://tomasum.files.wordpress.com/2018/03/screenshot_2018-03-19_17-57-56.png?w=739" />
+
+    <p>Enable Elliptic curve support, only disable this option if you will use an old client software.</p>
+
+    <img src="https://tomasum.files.wordpress.com/2018/03/screenshot_2018-03-19_17-58-25.png?w=739" />
+
+    <p>If your ISP gives you a static ip address you can use it now, for home networks you will probably need a dynamic dns
+        provider. A good one with a free plan is
+        <a href="https://freedns.afraid.org/">freedns.afraid.org</a>.</p>
+
+    <img src="https://tomasum.files.wordpress.com/2018/03/screenshot_2018-03-19_18-10-26.png" />
+
+    <p>Choose the DNS provider for your connection, you can use the one provided by your ISP or another one from the list provided.</p>
+
+    <img src="https://tomasum.files.wordpress.com/2018/03/screenshot_2018-03-19_18-13-24.png" />
+
+    <p>We are done! but not quite.</p>
+
+    <img src="https://tomasum.files.wordpress.com/2018/03/screenshot_2018-03-19_18-14-43.png" />
+
+    <h5>Configuring The firewall</h5>
+    <p>PiVPN automatically detects and configures ufw (the firewall). Let's check the active rules.
+        <pre class="term">
+$ sudo ufw status verbose</pre>
+    </p>
+
+    <img src="https://tomasum.files.wordpress.com/2018/03/screenshot_2018-03-19_18-21-21.png" />
+
+    <p>
+        Now we have to change the port forwarding rules (Port Mapping Configuration) in the router, each model has a different user
+        interface so I won't show these steps here.
+    </p>
+    <p>
+        <a href="https://portforward.com/router.htm">This website is a good resource if you don't know how to configure your router</a>.
+    </p>
+
+    <h5>Create client configuration</h5>
+    <p>
+        <pre class="term">
+$ pivpn add</pre> This command will create the configuration file for the client. It will ask for a name and a password
+    </p>
+
+    <img src="https://tomasum.files.wordpress.com/2018/03/screenshot_2018-03-19_19-00-34.png?w=739" />
+
+
+    <p>The configuration file is stored on
+        <code>~/ovpns/</code>
+    </p>
+    <p>Copy the file to the client and you should be able to connect.</p>
+
+    <h5>Client Software</h5>
+    <p>To connect from a linux machine import the .ovpn file on networkmanager vpn interface.</p>
+    <p>
+        To connect from Android use the official OpenVpn client to import the file.
+        <a href="https://play.google.com/store/apps/details?id=net.openvpn.openvpn">OpenVPN Connect</a>
+    </p>
+
+    <h5>The pivpn command</h5>
+    <p>
+        <pre style="font-size: 1.3em;">
+::: Control all PiVPN specific functions!
+:::
+::: Usage: pivpn command [option]
+:::
+::: Options:
+:::  -a, add [nopass]     Create a client ovpn profile, optional nopass
+:::  -c, clients          List any connected clients to the server
+:::  -d, debug            Start a debugging session if having trouble
+:::  -l, list             List all valid and revoked certificates
+:::  -r, revoke           Revoke a client ovpn profile
+:::  -h, help             Show this help dialog
+:::  -u, uninstall        Uninstall PiVPN from your system!
+</pre>
+    </p>
+
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+</body>
+
+</html>
