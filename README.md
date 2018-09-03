@@ -3,7 +3,7 @@ my website
 
 Hosted on github pages:
 
-<https://www.tomasabril.github.io>
+<https://tomasabril.github.io>
 
 
 Hosted on onion network / TOR:
