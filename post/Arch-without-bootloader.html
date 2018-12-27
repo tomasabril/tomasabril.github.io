@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Tomás Abril - site pessoal</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sakura.css" type="text/css">
+</head>
+
+<body>
+    <header>
+        <small>
+            <a href="../index.html">Home</a>
+            <p>Published on 26/12/18 by Tomás Abril</p>
+            <hr>
+        </small>
+    </header>
+
+    <h2>Booting ArchLinux without a bootloader</h2>
+    <h4>Calling The Kernel EFI Stub directly from EFI firmware in the motherboard.</h4>
+
+    <a href="https://wiki.archlinux.org/index.php/EFISTUB">Archlinux wiki - EFI STUB</a>
+
+    <p>Recent versions of the Arch Linux kernel are built with the option to be booted directly by a UEFI motherboard,
+        this is called EFISTUB. Using a bootloades like rEFInd or grub is still recommended if you are using multible
+        operating systems.</p>
+    <p>Not all EFI firmware supports EFISTUB, but this should work on most computers made in the last few years.</P>
+
+
+    <h2>Formatting partitions</h2>
+    <a href="https://wiki.archlinux.org/index.php/EFI_system_partition">EFI_system_partition</a>
+    <p>An Efi system partition should be between 100mb and 500mb.</p>
+    <p>I use cfdisk which is a command line graphic program to partition the disk, The EFI partition has to be set to
+        type EFI System.</p>
+    <img src="../img/efi_fs_type.png" />
+    <p>This are the partitions I ended up on my system.</p>
+    <img src="../img/efi_instalation_partitions.png" />
+    <p> /dev/sda1 is my efi partition and /dev/sda2 will be my root partition. </p>
+    <p>After the partitions are created you must format the esp as FAT32, you can do that with the command</p>
+    <pre class="term"># mkfs.fat -F32 /dev/sda1</pre>
+
+
+    <h2>Proceed with normal Arch instalation</h2>
+    <p>Mount the esp partition to your /boot</p>
+    <p>Complete normal instalation but instead of installing a boot loader use the steps bellow.</p>
+
+
+    <h2>Managing EFI Boot Loaders - Kernel EFI Stub Loader</h2>
+    <p><a href="https://wiki.archlinux.org/index.php/EFISTUB#Using_UEFI_directly">
+            Arch Wiki on EFI stub</a></p>
+
+    <p> <a href="https://www.rodsbooks.com/efi-bootloaders/efistub.html">
+            Blog on Managing EFI Boot Loaders for Linux: Using the Kernel's EFI Stub Loader by Rod Smith</a></p>
+
+    <p><a href="https://github.com/rhboot/efibootmgr">Page on efibootmgr</a>, this is a Linux program to modify the EFI
+        Boot Manager. We will use this to create and destroy boot entries and change boot order.</p>
+
+    <h5>To list current boot options use the command</h5>
+    <pre class="term"># efibootmgr</pre>
+    <p>This gives me the following result. "Boot0000* Arch-Linux" is my current Arch Linux boot.</p>
+    <img src="../img/efibootmng_list.png" />
+
+    <h5>To delete an entry from this list use the command</h5>
+    <pre class="term"># efibootmgr -b 0 -B</pre>
+    <p>-b -B options are to modify and delete. 0 is the number of the entry, this is always an hexadecimal. In my case
+        this command would delete my Arch-Linux boot entry.</p>
+
+
+    <h5>Create a new boot entry</h5>
+    <pre class="term"># efibootmgr --disk /dev/sda --part 1 --create --label "Arch-Linux" --loader /vmlinuz-linux --unicode 'root=/dev/sda2 rw initrd=\intel-ucode.img initrd=\initramfs-linux.img' --verbose</pre>
+    <p>This command has to be exactly right to <b>your system</b> or your OS will not boot.</p>
+    <table>
+        <tr>
+            <td>--disk /dev/sda</td>
+            <td>The disk where the loader is located (not partition). <i>Change according to your system</i></td>
+        </tr>
+        <tr>
+            <td>--part 1</td>
+            <td>EFI partition where loader will be created. <i>Change according to your system</i></td>
+        </tr>
+        <tr>
+            <td>--create</td>
+            <td>Create new boot entry and add to boot list</td>
+        </tr>
+        <tr>
+            <td>--label "Arch-Linux"</td>
+            <td>Boot manager display label</td>
+        </tr>
+        <tr>
+            <td>--loader /vmlinuz-linux</td>
+            <td>Name of the EFI loader</td>
+        </tr>
+        <tr>
+            <td>--unicode ' '</td>
+            <td>Inside the quotes is a list of <a href="https://wiki.archlinux.org/index.php/Kernel_parameters">kernel
+                    parameters</a>, root and initrd are obligatory</td>
+        </tr>
+        <tr>
+            <td>root=/dev/sda2</td>
+            <td>Location of your root folder. <i>Change according to your system</i></td>
+        </tr>
+        <tr>
+            <td>rw</td>
+            <td>Mount as read/write</td>
+        </tr>
+        <tr>
+            <td>initrd=\intel-ucode.img</td>
+            <td>This option is to enable <a href="https://wiki.archlinux.org/index.php/Microcode#EFI_boot_stub_/_EFI_handover">microcode</a>
+                on your system. This is optional and depends on the cpu. <i>Change according to your system</i></td>
+        </tr>
+        <tr>
+            <td>initrd=\initramfs&#8209;linux.img</td>
+            <td>Location of initial ram disk, note the backslash (\). If you mounted the efi partition to /boot this
+                option can be used as shown </td>
+        </tr>
+        <tr>
+            <td>--verbose</td>
+            <td>Show additional information during and after execution</td>
+        </tr>
+
+    </table>
+
+
+
+
+
+
+
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+</body>
+
+</html>
