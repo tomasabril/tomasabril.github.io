@@ -17,9 +17,9 @@ body {
     padding: 13px;
 }
 
-@media (max-width: 684px) {
+@media screen and (max-width: 684px) {
     body {
-        font-size: 1.3rem;
+        font-size: 110%;
     }
 }
 
